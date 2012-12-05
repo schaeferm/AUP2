@@ -7,16 +7,13 @@ import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.win32.LITEM;
 import org.eclipse.ui.*;
 import org.eclipse.swt.SWT;
 import org.jcryptool.visual.aup2.Aup2Activator;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Button;
@@ -27,9 +24,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.ControlListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 
@@ -72,6 +66,8 @@ public class Aup2View extends ViewPart {
 	private StyledText descPluginText;
 	private Sash sashContentBox;
 	private FormData fd_sashCB;
+	private Sash sashGrpDesc;
+	private FormData fd_sashGD;
 
 	/**
 	 * The constructor.
@@ -148,6 +144,7 @@ public class Aup2View extends ViewPart {
 		fd_sashCB.top = new FormAttachment(PERCENT_contentBox, 0);
 		sashContentBox.setLayoutData(fd_sashCB);
 		
+		grpDesc.setLayout(new FormLayout());
 		FormData fd_grpDesc = new FormData();
 		fd_grpDesc.top = new FormAttachment(sashContentBox, 0);
 		fd_grpDesc.left = new FormAttachment(0);
@@ -155,7 +152,6 @@ public class Aup2View extends ViewPart {
 		fd_grpDesc.bottom = new FormAttachment(100, 0);
 		grpDesc.setLayoutData(fd_grpDesc);
 		grpDesc.setText(Messages.Aup2View_GrpDesc);
-		grpDesc.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
 		optBox = new Composite(middleBox, SWT.NONE);
 		FormData fd_optBox = new FormData();
@@ -238,8 +234,22 @@ public class Aup2View extends ViewPart {
 		grpMatrix.setText(Messages.Aup2View_GrpMatrix);
 		grpMatrix.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
+		sashGrpDesc = new Sash(grpDesc, SWT.VERTICAL);
+		
 		descStep = new Composite(grpDesc, SWT.NONE);
+		FormData fd_descStep = new FormData();
+		fd_descStep.bottom = new FormAttachment(100, 0);
+		fd_descStep.right = new FormAttachment(sashGrpDesc, 0);
+		fd_descStep.top = new FormAttachment(0, 0);
+		fd_descStep.left = new FormAttachment(0, 0);
+		descStep.setLayoutData(fd_descStep);
 		descStep.setLayout(new GridLayout(1, false));
+		
+		fd_sashGD = new FormData();
+		fd_sashGD.left = new FormAttachment(PERCENT_grpDesc, 0);
+		fd_sashGD.top = new FormAttachment(0);
+		fd_sashGD.bottom = new FormAttachment(100);
+		sashGrpDesc.setLayoutData(fd_sashGD);
 		
 		descStepHeading = new StyledText(descStep, SWT.READ_ONLY | SWT.WRAP);
 		descStepHeading.setDoubleClickEnabled(false);
@@ -261,6 +271,12 @@ public class Aup2View extends ViewPart {
 		descStep3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
 		descPlugin = new Composite(grpDesc, SWT.NONE);
+		FormData fd_descPlugin = new FormData();
+		fd_descPlugin.bottom = new FormAttachment(100, 0);
+		fd_descPlugin.right = new FormAttachment(100, 0);
+		fd_descPlugin.top = new FormAttachment(0, 0);
+		fd_descPlugin.left = new FormAttachment(sashGrpDesc, 0);
+		descPlugin.setLayoutData(fd_descPlugin);
 		descPlugin.setLayout(new GridLayout(1, false));
 		
 		descPluginHeading = new StyledText(descPlugin, SWT.READ_ONLY | SWT.WRAP);
@@ -292,7 +308,7 @@ public class Aup2View extends ViewPart {
 	 * Hook resize events to enforce minimum dimensions 
 	 */
 	private void hookResize() {
-		//enable UI user resizing of contentBox's children
+		//enable the user to resize contentBox's children
 		sashContentBox.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
 				Rectangle sashRect = sashContentBox.getBounds();
@@ -309,22 +325,56 @@ public class Aup2View extends ViewPart {
 			}
 		});
 		
+		//enable the user to resize grpDesc's children
+		sashGrpDesc.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Rectangle sashRect = sashGrpDesc.getBounds();
+				Rectangle contentRect = grpDesc.getClientArea();
+				int space = contentRect.width - sashRect.width;
+				e.x = Math.max(Math.min(e.x, (space - LIMIT_Desc)), LIMIT_Desc);
+				if (e.x != sashRect.x) {
+					fd_sashGD.left = new FormAttachment(e.x * 100 / space, 0);
+					grpDesc.layout();
+				}
+			}
+		});
+		
 	    //enforce size for contentBox's children
 		contentBox.addControlListener(new ControlAdapter() {
 			@Override
 			public void controlResized(ControlEvent e) {
 				Point middleBoxSize = middleBox.getSize();
 				if(middleBoxSize.y == 0) return; //UI not fully initialized -> quit
-				Point grpDescSize = middleBox.getSize();
 				int size = 0;
 				Rectangle sashRect = sashContentBox.getBounds();
 				Rectangle contentRect = contentBox.getClientArea();
 				int space = contentRect.height - sashRect.height;
 				if(middleBoxSize.y <= LIMIT_middleBox) size = LIMIT_middleBox; //enforce LIMIT_middleBox
-				else if (grpDescSize.y >= space - LIMIT_grpDesc) size = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
+				else if (middleBoxSize.y >= space - LIMIT_grpDesc) size = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
 				if (size != 0) {
 					fd_sashCB.top = new FormAttachment(size*100/space, 0);
 					contentBox.layout();
+				}
+//				contentBox.redraw();
+//				super.controlResized(e);
+			}
+		});
+		
+	    //enforce size for grpDesc's children
+		grpDesc.addControlListener(new ControlAdapter() {
+			@Override
+			public void controlResized(ControlEvent e) {
+				Point descStepSize = descStep.getSize();
+				if(descStepSize.x == 0) return; //UI not fully initialized -> quit
+				Rectangle sashRect = sashGrpDesc.getBounds();
+				Rectangle contentRect = grpDesc.getClientArea();
+				int space = contentRect.width - sashRect.width;
+				int size = 0;
+				if(descStepSize.x <= LIMIT_Desc) size = LIMIT_Desc; //enforce LIMIT_Desc for descStep
+				else if (descStepSize.x >= space - LIMIT_Desc) size = space - LIMIT_Desc; //enforce LIMIT_Desc for descPlugin
+				if (size != 0) {
+					fd_sashGD.left = new FormAttachment(size*100/space, 0);
+					grpDesc.layout();
 				}
 //				contentBox.redraw();
 //				super.controlResized(e);
