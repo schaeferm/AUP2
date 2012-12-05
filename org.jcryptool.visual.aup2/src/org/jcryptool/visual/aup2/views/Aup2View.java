@@ -5,6 +5,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.win32.LITEM;
 import org.eclipse.ui.*;
 import org.eclipse.swt.SWT;
 import org.jcryptool.visual.aup2.Aup2Activator;
@@ -13,11 +15,20 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Sash;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 
@@ -26,8 +37,16 @@ public class Aup2View extends ViewPart {
 	/**
 	 * The ID of the view as specified by the extension.
 	 */
-	public static final String ID = "org.jcryptool.visual.aup2.views.Aup2View"; //$NON-NLS-1$
+	public static final String ID = "org.jcryptool.visual.aup2.views.MainView"; //$NON-NLS-1$
 
+	//UI constants
+	private static final int LIMIT_middleBox = 300;	//minimum height of middleBox
+	private static final int LIMIT_grpDesc = 80; //minimum height of grpDesc
+	private static final int LIMIT_Desc = 150; //minimum weight of descStep and descPlugin
+	private static final int PERCENT_contentBox = 75; //initial height of middleBox in percent of contentBox's height
+	private static final int PERCENT_grpDesc = 40; //initial weight of descStep in percent of grpDesc's weight
+	
+	//UI elements
 	private Composite parent;
 	private Button btnSave;
 	private Button btnCancel;
@@ -37,12 +56,11 @@ public class Aup2View extends ViewPart {
 	private Spinner spinnerSize;
 	private Group grpOperation;
 	private Composite optBox;
-	private SashForm contentForm;
+	private Composite contentBox;
 	private Composite headingBox;
 	private Group grpMatrix;
 	private Group grpDesc;
 	private Composite middleBox;
-	private SashForm descForm;
 	private Composite descStep;
 	private Composite descPlugin;
 	private StyledText descStepHeading;
@@ -51,6 +69,8 @@ public class Aup2View extends ViewPart {
 	private StyledText descStep3;
 	private StyledText descPluginHeading;
 	private StyledText descPluginText;
+	private Sash sashContentBox;
+	private FormData fd_sashCB;
 
 	/**
 	 * The constructor.
@@ -93,10 +113,10 @@ public class Aup2View extends ViewPart {
 		fd_headingBox.left = new FormAttachment(0);
 		headingBox.setLayoutData(fd_headingBox);
 		
-		contentForm = new SashForm(rootBox, SWT.VERTICAL);
-		FormData fd_contentForm = new FormData();
-		fd_contentForm.left = new FormAttachment(headingBox, 10, SWT.LEFT);
-		fd_contentForm.top = new FormAttachment(headingBox, 6);
+		contentBox = new Composite(rootBox, SWT.NONE);
+		FormData fd_contentBox = new FormData();
+		fd_contentBox.left = new FormAttachment(headingBox, 10, SWT.LEFT);
+		fd_contentBox.top = new FormAttachment(headingBox, 6);
 		
 		Label heading = new Label(headingBox, SWT.NONE);
 		FormData fd_heading = new FormData();
@@ -104,12 +124,53 @@ public class Aup2View extends ViewPart {
 		fd_heading.left = new FormAttachment(0, 10);
 		heading.setLayoutData(fd_heading);
 		heading.setText(Messages.Aup2View_Heading);
-		fd_contentForm.bottom = new FormAttachment(100, -10);
-		fd_contentForm.right = new FormAttachment(100, -10);
-		contentForm.setLayoutData(fd_contentForm);
+		contentBox.setLayout(new FormLayout());
+		fd_contentBox.bottom = new FormAttachment(100, -10);
+		fd_contentBox.right = new FormAttachment(100, -10);
+		contentBox.setLayoutData(fd_contentBox);
+		//TODO add resize event handler to contentBox
 		
-		middleBox = new Composite(contentForm, SWT.NONE);
+		middleBox = new Composite(contentBox, SWT.NONE);
+		sashContentBox = new Sash(contentBox, SWT.HORIZONTAL);
+		grpDesc = new Group(contentBox, SWT.NONE);
+		
+		FormData fd_middleBox = new FormData();
+		fd_middleBox.left = new FormAttachment(0);
+		fd_middleBox.right = new FormAttachment(100);
+		fd_middleBox.bottom = new FormAttachment(sashContentBox, 0);
+		fd_middleBox.top = new FormAttachment(0);
+		middleBox.setLayoutData(fd_middleBox);
 		middleBox.setLayout(new FormLayout());
+		
+		fd_sashCB = new FormData();
+		fd_sashCB.left = new FormAttachment(0);
+		fd_sashCB.right = new FormAttachment(100);
+		fd_sashCB.top = new FormAttachment(PERCENT_contentBox, 0);
+		sashContentBox.setLayoutData(fd_sashCB);
+		
+		//enable UI user resizing
+	    sashContentBox.addListener(SWT.Selection, new Listener() {
+	        public void handleEvent(Event e) {
+	          Rectangle sashRect = sashContentBox.getBounds();
+	          Rectangle contentRect = contentBox.getClientArea();
+	          int space = contentRect.height - sashRect.height;
+	          if(e.y <= LIMIT_middleBox) e.y = LIMIT_middleBox; //enforce LIMIT_middleBox
+	          else if (e.y >= space - LIMIT_grpDesc) e.y = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
+	          if (e.y != sashRect.y) {
+	        	  fd_sashCB.top = new FormAttachment(0, e.y);
+	            contentBox.layout();
+	          }
+	        }
+	      });
+		
+		FormData fd_grpDesc = new FormData();
+		fd_grpDesc.top = new FormAttachment(sashContentBox, 0);
+		fd_grpDesc.left = new FormAttachment(0);
+		fd_grpDesc.right = new FormAttachment(100);
+		fd_grpDesc.bottom = new FormAttachment(100, 0);
+		grpDesc.setLayoutData(fd_grpDesc);
+		grpDesc.setText(Messages.Aup2View_GrpDesc);
+		grpDesc.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
 		optBox = new Composite(middleBox, SWT.NONE);
 		FormData fd_optBox = new FormData();
@@ -192,13 +253,7 @@ public class Aup2View extends ViewPart {
 		grpMatrix.setText(Messages.Aup2View_GrpMatrix);
 		grpMatrix.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
-		grpDesc = new Group(contentForm, SWT.NONE);
-		grpDesc.setText(Messages.Aup2View_GrpDesc);
-		grpDesc.setLayout(new FillLayout(SWT.HORIZONTAL));
-		
-		descForm = new SashForm(grpDesc, SWT.NONE);
-		
-		descStep = new Composite(descForm, SWT.NONE);
+		descStep = new Composite(grpDesc, SWT.NONE);
 		descStep.setLayout(new GridLayout(1, false));
 		
 		descStepHeading = new StyledText(descStep, SWT.READ_ONLY | SWT.WRAP);
@@ -220,7 +275,7 @@ public class Aup2View extends ViewPart {
 		descStep3.setDoubleClickEnabled(false);
 		descStep3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
-		descPlugin = new Composite(descForm, SWT.NONE);
+		descPlugin = new Composite(grpDesc, SWT.NONE);
 		descPlugin.setLayout(new GridLayout(1, false));
 		
 		descPluginHeading = new StyledText(descPlugin, SWT.READ_ONLY | SWT.WRAP);
@@ -233,12 +288,12 @@ public class Aup2View extends ViewPart {
 		descPluginText.setDoubleClickEnabled(false);
 		descPluginText.setText(String.format(Messages.Aup2View_DescBoxR_Text, ""));
 		descPluginText.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, true, 1, 1));
-		descForm.setWeights(new int[] {1, 1});
-		contentForm.setWeights(new int[] {3, 1});
 		
 		sc.setContent(rootBox);
 		sc.setExpandHorizontal(true);
 		sc.setExpandVertical(true);
+		
+		hookResize();
 	}
 
 	/**
@@ -248,11 +303,30 @@ public class Aup2View extends ViewPart {
 		parent.setFocus();
 	}
 	
-	//sashform minimum width:
-	//http://forums.pentaho.com/showthread.php?61793-Creating-a-Minimum-Width-Constraint-on-an-SWT-SashForm
-	//http://www.javadocexamples.com/java_source/org/eclipse/swt/examples/controlexample/SashTab.java.html
+	/**
+	 * Hook resize events to enforce minimum dimensions 
+	 */
+	private void hookResize() {
+
+	}
 	
 	public void reset() {
 		//TODO implement reset function
+	}
+	
+	public class ResizeHandler extends ControlAdapter{
+
+		final int LIMIT;
+		
+		ResizeHandler(int limit) {
+			LIMIT = limit;
+		}
+		
+		@Override
+		public void controlResized(ControlEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 }
