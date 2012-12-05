@@ -5,6 +5,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.win32.LITEM;
 import org.eclipse.ui.*;
@@ -128,7 +129,6 @@ public class Aup2View extends ViewPart {
 		fd_contentBox.bottom = new FormAttachment(100, -10);
 		fd_contentBox.right = new FormAttachment(100, -10);
 		contentBox.setLayoutData(fd_contentBox);
-		//TODO add resize event handler to contentBox
 		
 		middleBox = new Composite(contentBox, SWT.NONE);
 		sashContentBox = new Sash(contentBox, SWT.HORIZONTAL);
@@ -147,21 +147,6 @@ public class Aup2View extends ViewPart {
 		fd_sashCB.right = new FormAttachment(100);
 		fd_sashCB.top = new FormAttachment(PERCENT_contentBox, 0);
 		sashContentBox.setLayoutData(fd_sashCB);
-		
-		//enable UI user resizing
-	    sashContentBox.addListener(SWT.Selection, new Listener() {
-	        public void handleEvent(Event e) {
-	          Rectangle sashRect = sashContentBox.getBounds();
-	          Rectangle contentRect = contentBox.getClientArea();
-	          int space = contentRect.height - sashRect.height;
-	          if(e.y <= LIMIT_middleBox) e.y = LIMIT_middleBox; //enforce LIMIT_middleBox
-	          else if (e.y >= space - LIMIT_grpDesc) e.y = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
-	          if (e.y != sashRect.y) {
-	        	  fd_sashCB.top = new FormAttachment(0, e.y);
-	            contentBox.layout();
-	          }
-	        }
-	      });
 		
 		FormData fd_grpDesc = new FormData();
 		fd_grpDesc.top = new FormAttachment(sashContentBox, 0);
@@ -307,11 +292,51 @@ public class Aup2View extends ViewPart {
 	 * Hook resize events to enforce minimum dimensions 
 	 */
 	private void hookResize() {
-
+		//enable UI user resizing of contentBox's children
+		sashContentBox.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Rectangle sashRect = sashContentBox.getBounds();
+				Rectangle contentRect = contentBox.getClientArea();
+				int space = contentRect.height - sashRect.height;
+				if (e.y <= LIMIT_middleBox)
+					e.y = LIMIT_middleBox; // enforce LIMIT_middleBox
+				else if (e.y >= space - LIMIT_grpDesc)
+					e.y = space - LIMIT_grpDesc; // enforce LIMIT_grpDesc
+				if (e.y != sashRect.y) {
+					fd_sashCB.top = new FormAttachment(e.y * 100 / space, 0);
+					contentBox.layout();
+				}
+			}
+		});
+		
+	    //enforce size for contentBox's children
+		contentBox.addControlListener(new ControlAdapter() {
+			@Override
+			public void controlResized(ControlEvent e) {
+				Point middleBoxSize = middleBox.getSize();
+				if(middleBoxSize.y == 0) return; //UI not fully initialized -> quit
+				Point grpDescSize = middleBox.getSize();
+				int size = 0;
+				Rectangle sashRect = sashContentBox.getBounds();
+				Rectangle contentRect = contentBox.getClientArea();
+				int space = contentRect.height - sashRect.height;
+				if(middleBoxSize.y <= LIMIT_middleBox) size = LIMIT_middleBox; //enforce LIMIT_middleBox
+				else if (grpDescSize.y >= space - LIMIT_grpDesc) size = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
+				if (size != 0) {
+					fd_sashCB.top = new FormAttachment(size*100/space, 0);
+					contentBox.layout();
+				}
+//				contentBox.redraw();
+//				super.controlResized(e);
+			}
+		});
 	}
 	
 	public void reset() {
 		//TODO implement reset function
+	}
+	
+	public void dispose() {
 	}
 	
 	public class ResizeHandler extends ControlAdapter{
