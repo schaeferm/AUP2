@@ -318,10 +318,10 @@ public class Aup2View extends ViewPart {
 					e.y = LIMIT_middleBox; // enforce LIMIT_middleBox
 				else if (e.y >= space - LIMIT_grpDesc)
 					e.y = space - LIMIT_grpDesc; // enforce LIMIT_grpDesc
-				if (e.y != sashRect.y) {
-					fd_sashCB.top = new FormAttachment(e.y * 100 / space, 0);
-					contentBox.layout();
-				}
+				if (e.y != sashRect.y) 
+					fd_sashCB.top = new FormAttachment(e.y * 100 / space, 0); //set new layout information
+				if(e.detail != SWT.DRAG)
+					contentBox.layout(); //layout when user ends the drag
 			}
 		});
 		
@@ -332,17 +332,20 @@ public class Aup2View extends ViewPart {
 				Rectangle contentRect = grpDesc.getClientArea();
 				int space = contentRect.width - sashRect.width;
 				e.x = Math.max(Math.min(e.x, (space - LIMIT_Desc)), LIMIT_Desc);
-				if (e.x != sashRect.x) {
-					fd_sashGD.left = new FormAttachment(e.x * 100 / space, 0);
-					grpDesc.layout();
-				}
+				if (e.x != sashRect.x) 
+					fd_sashGD.left = new FormAttachment(e.x * 100 / space, 0); //set new layout information
+				if(e.detail != SWT.DRAG)	
+					grpDesc.layout(); //layout when user ends the drag
 			}
 		});
 		
-	    //enforce size for contentBox's children
-		contentBox.addControlListener(new ControlAdapter() {
-			@Override
-			public void controlResized(ControlEvent e) {
+	    //enforce minimum size for contentBox's children		
+		contentBox.addListener(SWT.Resize, new Listener() {
+			int time = 0; //time of the last handled event
+			
+			public void handleEvent(Event e) {
+				if(e.time == time) return; //quit if event was already handled
+				else time = e.time; //save time to filter already served events
 				Point middleBoxSize = middleBox.getSize();
 				if(middleBoxSize.y == 0) return; //UI not fully initialized -> quit
 				int size = 0;
@@ -356,14 +359,16 @@ public class Aup2View extends ViewPart {
 					contentBox.layout();
 				}
 //				contentBox.redraw();
-//				super.controlResized(e);
 			}
 		});
 		
-	    //enforce size for grpDesc's children
-		grpDesc.addControlListener(new ControlAdapter() {
-			@Override
-			public void controlResized(ControlEvent e) {
+	    //enforce minimum size for grpDesc's children
+		grpDesc.addListener(SWT.Resize, new Listener() {
+			int time = 0; //time of the last handled event
+			
+			public void handleEvent(Event e) {
+				if(e.time == time) return; //quit if event was already handled
+				else time = e.time; //save time to filter already served events
 				Point descStepSize = descStep.getSize();
 				if(descStepSize.x == 0) return; //UI not fully initialized -> quit
 				Rectangle sashRect = sashGrpDesc.getBounds();
@@ -377,7 +382,6 @@ public class Aup2View extends ViewPart {
 					grpDesc.layout();
 				}
 //				contentBox.redraw();
-//				super.controlResized(e);
 			}
 		});
 	}
