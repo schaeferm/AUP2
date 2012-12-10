@@ -13,7 +13,7 @@ public class Messages extends NLS {
 	public static String Aup2View_OptsChange;
 	public static String Aup2View_OptsCheck;
 	public static String Aup2View_OptsSet;
-	public static String Aup2View_OptsSize;
+	public static String Aup2View_GrpSize;
 	public static String Aup2View_DescBoxR_Heading;
 	public static String Aup2View_DescBoxR_Text;
 	public static String Aup2View_DescBoxR_Text_Security;
@@ -24,6 +24,8 @@ public class Messages extends NLS {
 	public static String Aup2View_Mode_Check_1;
 	public static String Aup2View_Mode_Set_1;
 	public static String Aup2View_Mode_Set_2;
+	public static String Aup2View_GrpActions;
+	public static String Aup2View_BtnSetSize;
 	
 	static {
 		// initialize resource bundle

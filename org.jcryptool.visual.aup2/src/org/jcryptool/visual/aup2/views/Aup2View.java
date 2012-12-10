@@ -46,7 +46,6 @@ public class Aup2View extends ViewPart {
 	private Button btnSave;
 	private Button btnCancel;
 	private Button btnRadioSet;
-	private Button btnRadioChange;
 	private Button btnRadioCheck;
 	private Spinner spinnerSize;
 	private Group grpOperation;
@@ -68,6 +67,10 @@ public class Aup2View extends ViewPart {
 	private FormData fd_sashCB;
 	private Sash sashGrpDesc;
 	private FormData fd_sashGD;
+	private Group grpActions;
+	private Button btnSetSize;
+	private Group grpSize;
+	private Label heading;
 
 	/**
 	 * The constructor.
@@ -115,7 +118,7 @@ public class Aup2View extends ViewPart {
 		fd_contentBox.left = new FormAttachment(headingBox, 10, SWT.LEFT);
 		fd_contentBox.top = new FormAttachment(headingBox, 6);
 		
-		Label heading = new Label(headingBox, SWT.NONE);
+		heading = new Label(headingBox, SWT.NONE);
 		FormData fd_heading = new FormData();
 		fd_heading.bottom = new FormAttachment(100, -5);
 		fd_heading.left = new FormAttachment(0, 10);
@@ -163,7 +166,7 @@ public class Aup2View extends ViewPart {
 		
 		grpOperation = new Group(optBox, SWT.NONE);
 		FormData fd_grpOperation = new FormData();
-		fd_grpOperation.bottom = new FormAttachment(0, 74);
+		fd_grpOperation.bottom = new FormAttachment(0, 56);
 		fd_grpOperation.top = new FormAttachment(0);
 		fd_grpOperation.left = new FormAttachment(0);
 		fd_grpOperation.right = new FormAttachment(100, -10);
@@ -176,55 +179,71 @@ public class Aup2View extends ViewPart {
 		grpOperation.setLayout(fl_grpOperation);
 		
 		btnRadioSet = new Button(grpOperation, SWT.RADIO);
+		btnRadioSet.setSelection(true);
 		btnRadioSet.setText(Messages.Aup2View_OptsSet);
 		
-		btnRadioChange = new Button(grpOperation, SWT.RADIO);
-		btnRadioChange.setText(Messages.Aup2View_OptsChange);
-		
 		btnRadioCheck = new Button(grpOperation, SWT.RADIO);
+		btnRadioCheck.setEnabled(false);
 		btnRadioCheck.setText(Messages.Aup2View_OptsCheck);
 		
-		btnSave = new Button(optBox, SWT.NONE);
-		btnSave.setEnabled(true);
-		FormData fd_btnSave = new FormData();
-		fd_btnSave.top = new FormAttachment(grpOperation, 6);
-		fd_btnSave.left = new FormAttachment(grpOperation, 0, SWT.LEFT);
-		fd_btnSave.right = new FormAttachment(100, -10);
-		btnSave.setLayoutData(fd_btnSave);
-		btnSave.setText(Messages.Aup2View_BtnSave);
+		grpSize = new Group(optBox, SWT.NONE);
+		grpSize.setText(Messages.Aup2View_GrpSize);
+		FormLayout fl_grpSize = new FormLayout();
+		fl_grpSize.marginWidth = 2;
+		fl_grpSize.marginHeight = 2;
+		grpSize.setLayout(fl_grpSize);
+		FormData fd_grpSize = new FormData();
+		fd_grpSize.bottom = new FormAttachment(grpOperation, 56, SWT.BOTTOM);
+		fd_grpSize.right = new FormAttachment(grpOperation, 0, SWT.RIGHT);
+		fd_grpSize.top = new FormAttachment(grpOperation, 6);
+		fd_grpSize.left = new FormAttachment(grpOperation, 0, SWT.LEFT);
+		grpSize.setLayoutData(fd_grpSize);
 		
-		btnCancel = new Button(optBox, SWT.NONE);
-		fd_btnSave.bottom = new FormAttachment(btnCancel, -6);
-		btnCancel.setGrayed(true);
-		FormData fd_btnCancel = new FormData();
-		fd_btnCancel.top = new FormAttachment(0, 116);
-		fd_btnCancel.left = new FormAttachment(grpOperation, 0, SWT.LEFT);
-		fd_btnCancel.right = new FormAttachment(grpOperation, 0, SWT.RIGHT);
-		btnCancel.setLayoutData(fd_btnCancel);
-		btnCancel.setText(Messages.Aup2View_BtnChancel);
-		
-		spinnerSize = new Spinner(optBox, SWT.BORDER);
-		fd_btnCancel.bottom = new FormAttachment(spinnerSize, -6);
+		spinnerSize = new Spinner(grpSize, SWT.BORDER);
+		FormData fd_spinnerSize = new FormData();
+		fd_spinnerSize.bottom = new FormAttachment(0, 28);
+		fd_spinnerSize.top = new FormAttachment(0, 3);
+		fd_spinnerSize.left = new FormAttachment(0);
+		spinnerSize.setLayoutData(fd_spinnerSize);
 		spinnerSize.setTextLimit(2);
 		spinnerSize.setPageIncrement(1);
 		spinnerSize.setMaximum(10);
 		spinnerSize.setMinimum(3);
 		spinnerSize.setEnabled(true);
-		FormData fd_spinnerSize = new FormData();
-		fd_spinnerSize.top = new FormAttachment(0, 152);
-		fd_spinnerSize.right = new FormAttachment(grpOperation, 0, SWT.RIGHT);
-		spinnerSize.setLayoutData(fd_spinnerSize);
-		
-		Label lblSize = new Label(optBox, SWT.NONE);
-		FormData fd_lblSize = new FormData();
-		fd_lblSize.top = new FormAttachment(spinnerSize, 3, SWT.TOP);
-		fd_lblSize.right = new FormAttachment(spinnerSize, -6);
-		fd_lblSize.left = new FormAttachment(0);
-		lblSize.setLayoutData(fd_lblSize);
-		lblSize.setText(Messages.Aup2View_OptsSize);
 		
 		grpMatrix = new Group(middleBox, SWT.NONE);
 		fd_optBox.right = new FormAttachment(grpMatrix, -6);
+		
+		grpActions = new Group(optBox, SWT.NONE);
+		grpActions.setText(Messages.Aup2View_GrpActions);
+		FillLayout fl_grpActions = new FillLayout(SWT.VERTICAL);
+		fl_grpActions.marginWidth = 2;
+		fl_grpActions.marginHeight = 2;
+		fl_grpActions.spacing = 2;
+		grpActions.setLayout(fl_grpActions);
+		FormData fd_grpActions = new FormData();
+		fd_grpActions.top = new FormAttachment(grpSize, 6);
+		fd_grpActions.left = new FormAttachment(grpOperation, 0, SWT.LEFT);
+		fd_grpActions.right = new FormAttachment(grpOperation, 0, SWT.RIGHT);
+		
+		btnSetSize = new Button(grpSize, SWT.NONE);
+		FormData fd_btnSetSize = new FormData();
+		fd_btnSetSize.left = new FormAttachment(spinnerSize, 5);
+		fd_btnSetSize.right = new FormAttachment(100);
+		fd_btnSetSize.top = new FormAttachment(spinnerSize, 0, SWT.TOP);
+		fd_btnSetSize.bottom = new FormAttachment(spinnerSize, 0, SWT.BOTTOM);
+		btnSetSize.setLayoutData(fd_btnSetSize);
+		btnSetSize.setText(Messages.Aup2View_BtnSetSize);
+		grpActions.setLayoutData(fd_grpActions);
+		
+		btnSave = new Button(grpActions, SWT.NONE);
+		btnSave.setEnabled(false);
+		btnSave.setText(Messages.Aup2View_BtnSave);
+		
+		btnCancel = new Button(grpActions, SWT.NONE);
+		btnCancel.setEnabled(false);
+		btnCancel.setGrayed(true);
+		btnCancel.setText(Messages.Aup2View_BtnChancel);
 		FormData fd_grpMatrix = new FormData();
 		fd_grpMatrix.left = new FormAttachment(0, 146);
 		fd_grpMatrix.right = new FormAttachment(100);
