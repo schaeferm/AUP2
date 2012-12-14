@@ -5,8 +5,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.ui.*;
 import org.eclipse.swt.SWT;
 import org.jcryptool.visual.aup2.Aup2Activator;
@@ -14,11 +12,8 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Sash;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.custom.StyledText;
@@ -26,6 +21,7 @@ import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.custom.SashForm;
 
 public class Aup2View extends ViewPart {
 
@@ -33,13 +29,6 @@ public class Aup2View extends ViewPart {
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "org.jcryptool.visual.aup2.views.MainView"; //$NON-NLS-1$
-
-	//UI constants
-	private static final int LIMIT_middleBox = 300;	//minimum height of middleBox
-	private static final int LIMIT_grpDesc = 80; //minimum height of grpDesc
-	private static final int LIMIT_Desc = 150; //minimum weight of descStep and descPlugin
-	private static final int PERCENT_contentBox = 75; //initial height of middleBox in percent of contentBox's height
-	private static final int PERCENT_grpDesc = 40; //initial weight of descStep in percent of grpDesc's weight
 	
 	//UI elements
 	private Composite parent;
@@ -50,7 +39,7 @@ public class Aup2View extends ViewPart {
 	private Spinner spinnerSize;
 	private Group grpOperation;
 	private Composite optBox;
-	private Composite contentBox;
+	private SashForm contentSashForm;
 	private Composite headingBox;
 	private Group grpMatrix;
 	private Group grpDesc;
@@ -63,14 +52,11 @@ public class Aup2View extends ViewPart {
 	private StyledText descStep3;
 	private StyledText descPluginHeading;
 	private StyledText descPluginText;
-	private Sash sashContentBox;
-	private FormData fd_sashCB;
-	private Sash sashGrpDesc;
-	private FormData fd_sashGD;
 	private Group grpActions;
 	private Button btnSetSize;
 	private Group grpSize;
 	private Label heading;
+	private SashForm grpDescSashForm;
 
 	/**
 	 * The constructor.
@@ -113,10 +99,10 @@ public class Aup2View extends ViewPart {
 		fd_headingBox.left = new FormAttachment(0);
 		headingBox.setLayoutData(fd_headingBox);
 		
-		contentBox = new Composite(rootBox, SWT.NONE);
-		FormData fd_contentBox = new FormData();
-		fd_contentBox.left = new FormAttachment(headingBox, 10, SWT.LEFT);
-		fd_contentBox.top = new FormAttachment(headingBox, 6);
+		contentSashForm = new SashForm(rootBox, SWT.VERTICAL);
+		FormData fd_contentSashForm = new FormData();
+		fd_contentSashForm.left = new FormAttachment(headingBox, 10, SWT.LEFT);
+		fd_contentSashForm.top = new FormAttachment(headingBox, 6);
 		
 		heading = new Label(headingBox, SWT.NONE);
 		FormData fd_heading = new FormData();
@@ -124,36 +110,15 @@ public class Aup2View extends ViewPart {
 		fd_heading.left = new FormAttachment(0, 10);
 		heading.setLayoutData(fd_heading);
 		heading.setText(Messages.Aup2View_Heading);
-		contentBox.setLayout(new FormLayout());
-		fd_contentBox.bottom = new FormAttachment(100, -10);
-		fd_contentBox.right = new FormAttachment(100, -10);
-		contentBox.setLayoutData(fd_contentBox);
+		fd_contentSashForm.bottom = new FormAttachment(100, -10);
+		fd_contentSashForm.right = new FormAttachment(100, -10);
+		contentSashForm.setLayoutData(fd_contentSashForm);
 		
-		middleBox = new Composite(contentBox, SWT.NONE);
-		sashContentBox = new Sash(contentBox, SWT.HORIZONTAL);
-		grpDesc = new Group(contentBox, SWT.NONE);
-		
-		FormData fd_middleBox = new FormData();
-		fd_middleBox.left = new FormAttachment(0);
-		fd_middleBox.right = new FormAttachment(100);
-		fd_middleBox.bottom = new FormAttachment(sashContentBox, 0);
-		fd_middleBox.top = new FormAttachment(0);
-		middleBox.setLayoutData(fd_middleBox);
+		middleBox = new Composite(contentSashForm, SWT.NONE);
+		middleBox.setBounds(0, 0, 557, 340);
+		grpDesc = new Group(contentSashForm, SWT.NONE);
+		grpDesc.setBounds(0, 343, 557, 111);
 		middleBox.setLayout(new FormLayout());
-		
-		fd_sashCB = new FormData();
-		fd_sashCB.left = new FormAttachment(0);
-		fd_sashCB.right = new FormAttachment(100);
-		fd_sashCB.top = new FormAttachment(PERCENT_contentBox, 0);
-		sashContentBox.setLayoutData(fd_sashCB);
-		
-		grpDesc.setLayout(new FormLayout());
-		FormData fd_grpDesc = new FormData();
-		fd_grpDesc.top = new FormAttachment(sashContentBox, 0);
-		fd_grpDesc.left = new FormAttachment(0);
-		fd_grpDesc.right = new FormAttachment(100);
-		fd_grpDesc.bottom = new FormAttachment(100, 0);
-		grpDesc.setLayoutData(fd_grpDesc);
 		grpDesc.setText(Messages.Aup2View_GrpDesc);
 		
 		optBox = new Composite(middleBox, SWT.NONE);
@@ -252,23 +217,12 @@ public class Aup2View extends ViewPart {
 		grpMatrix.setLayoutData(fd_grpMatrix);
 		grpMatrix.setText(Messages.Aup2View_GrpMatrix);
 		grpMatrix.setLayout(new FillLayout(SWT.HORIZONTAL));
+		grpDesc.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
-		sashGrpDesc = new Sash(grpDesc, SWT.VERTICAL);
+		grpDescSashForm = new SashForm(grpDesc, SWT.NONE);
 		
-		descStep = new Composite(grpDesc, SWT.NONE);
-		FormData fd_descStep = new FormData();
-		fd_descStep.bottom = new FormAttachment(100, 0);
-		fd_descStep.right = new FormAttachment(sashGrpDesc, 0);
-		fd_descStep.top = new FormAttachment(0, 0);
-		fd_descStep.left = new FormAttachment(0, 0);
-		descStep.setLayoutData(fd_descStep);
+		descStep = new Composite(grpDescSashForm, SWT.NONE);
 		descStep.setLayout(new GridLayout(1, false));
-		
-		fd_sashGD = new FormData();
-		fd_sashGD.left = new FormAttachment(PERCENT_grpDesc, 0);
-		fd_sashGD.top = new FormAttachment(0);
-		fd_sashGD.bottom = new FormAttachment(100);
-		sashGrpDesc.setLayoutData(fd_sashGD);
 		
 		descStepHeading = new StyledText(descStep, SWT.READ_ONLY | SWT.WRAP);
 		descStepHeading.setDoubleClickEnabled(false);
@@ -289,13 +243,7 @@ public class Aup2View extends ViewPart {
 		descStep3.setDoubleClickEnabled(false);
 		descStep3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
-		descPlugin = new Composite(grpDesc, SWT.NONE);
-		FormData fd_descPlugin = new FormData();
-		fd_descPlugin.bottom = new FormAttachment(100, 0);
-		fd_descPlugin.right = new FormAttachment(100, 0);
-		fd_descPlugin.top = new FormAttachment(0, 0);
-		fd_descPlugin.left = new FormAttachment(sashGrpDesc, 0);
-		descPlugin.setLayoutData(fd_descPlugin);
+		descPlugin = new Composite(grpDescSashForm, SWT.NONE);
 		descPlugin.setLayout(new GridLayout(1, false));
 		
 		descPluginHeading = new StyledText(descPlugin, SWT.READ_ONLY | SWT.WRAP);
@@ -308,6 +256,8 @@ public class Aup2View extends ViewPart {
 		descPluginText.setDoubleClickEnabled(false);
 		descPluginText.setText(String.format(Messages.Aup2View_DescBoxR_Text, ""));
 		descPluginText.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, true, 1, 1));
+		grpDescSashForm.setWeights(new int[] {40, 60});
+		contentSashForm.setWeights(new int[] {70, 30});
 		
 		sc.setContent(rootBox);
 		sc.setExpandHorizontal(true);
@@ -327,82 +277,7 @@ public class Aup2View extends ViewPart {
 	 * Hook resize events to enforce minimum dimensions 
 	 */
 	private void hookResize() {
-		//enable the user to resize contentBox's children
-		sashContentBox.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event e) {
-				Rectangle sashRect = sashContentBox.getBounds();
-				Rectangle contentRect = contentBox.getClientArea();
-				int space = contentRect.height - sashRect.height;
-				if (e.y <= LIMIT_middleBox)
-					e.y = LIMIT_middleBox; // enforce LIMIT_middleBox
-				else if (e.y >= space - LIMIT_grpDesc)
-					e.y = space - LIMIT_grpDesc; // enforce LIMIT_grpDesc
-				if (e.y != sashRect.y) 
-					fd_sashCB.top = new FormAttachment(e.y * 100 / space, 0); //set new layout information
-				if(e.detail != SWT.DRAG)
-					contentBox.layout(); //layout when user ends the drag
-			}
-		});
 		
-		//enable the user to resize grpDesc's children
-		sashGrpDesc.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event e) {
-				Rectangle sashRect = sashGrpDesc.getBounds();
-				Rectangle contentRect = grpDesc.getClientArea();
-				int space = contentRect.width - sashRect.width;
-				e.x = Math.max(Math.min(e.x, (space - LIMIT_Desc)), LIMIT_Desc);
-				if (e.x != sashRect.x) 
-					fd_sashGD.left = new FormAttachment(e.x * 100 / space, 0); //set new layout information
-				if(e.detail != SWT.DRAG)	
-					grpDesc.layout(); //layout when user ends the drag
-			}
-		});
-		
-	    //enforce minimum size for contentBox's children		
-		contentBox.addListener(SWT.Resize, new Listener() {
-			int time = 0; //time of the last handled event
-			
-			public void handleEvent(Event e) {
-				if(e.time == time) return; //quit if event was already handled
-				else time = e.time; //save time to filter already served events
-				Point middleBoxSize = middleBox.getSize();
-				if(middleBoxSize.y == 0) return; //UI not fully initialized -> quit
-				int size = 0;
-				Rectangle sashRect = sashContentBox.getBounds();
-				Rectangle contentRect = contentBox.getClientArea();
-				int space = contentRect.height - sashRect.height;
-				if(middleBoxSize.y <= LIMIT_middleBox) size = LIMIT_middleBox; //enforce LIMIT_middleBox
-				else if (middleBoxSize.y >= space - LIMIT_grpDesc) size = space - LIMIT_grpDesc; //enforce LIMIT_grpDesc
-				if (size != 0) {
-					fd_sashCB.top = new FormAttachment(size*100/space, 0);
-					contentBox.layout();
-				}
-//				contentBox.redraw();
-			}
-		});
-		
-	    //enforce minimum size for grpDesc's children
-		grpDesc.addListener(SWT.Resize, new Listener() {
-			int time = 0; //time of the last handled event
-			
-			public void handleEvent(Event e) {
-				if(e.time == time) return; //quit if event was already handled
-				else time = e.time; //save time to filter already served events
-				Point descStepSize = descStep.getSize();
-				if(descStepSize.x == 0) return; //UI not fully initialized -> quit
-				Rectangle sashRect = sashGrpDesc.getBounds();
-				Rectangle contentRect = grpDesc.getClientArea();
-				int space = contentRect.width - sashRect.width;
-				int size = 0;
-				if(descStepSize.x <= LIMIT_Desc) size = LIMIT_Desc; //enforce LIMIT_Desc for descStep
-				else if (descStepSize.x >= space - LIMIT_Desc) size = space - LIMIT_Desc; //enforce LIMIT_Desc for descPlugin
-				if (size != 0) {
-					fd_sashGD.left = new FormAttachment(size*100/space, 0);
-					grpDesc.layout();
-				}
-//				contentBox.redraw();
-			}
-		});
 	}
 	
 	public void reset() {
