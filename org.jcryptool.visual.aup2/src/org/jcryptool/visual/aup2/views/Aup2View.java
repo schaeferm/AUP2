@@ -5,6 +5,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.ui.*;
 import org.eclipse.swt.SWT;
 import org.jcryptool.visual.aup2.Aup2Activator;
@@ -12,13 +13,14 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.custom.SashForm;
@@ -57,6 +59,10 @@ public class Aup2View extends ViewPart {
 	private Group grpSize;
 	private Label heading;
 	private SashForm grpDescSashForm;
+	private ScrolledComposite descStepSC;
+	private ScrolledComposite descPluginSC;
+
+	private Listener scroll;
 
 	/**
 	 * The constructor.
@@ -221,7 +227,13 @@ public class Aup2View extends ViewPart {
 		
 		grpDescSashForm = new SashForm(grpDesc, SWT.NONE);
 		
-		descStep = new Composite(grpDescSashForm, SWT.NONE);
+		descStepSC = new ScrolledComposite(grpDescSashForm, SWT.V_SCROLL);
+		descStepSC.setMinWidth(100);
+		descStepSC.setMinHeight(100);
+		descStepSC.setExpandHorizontal(true);
+		descStepSC.setExpandVertical(true);
+		
+		descStep = new Composite(descStepSC, SWT.NONE);
 		descStep.setLayout(new GridLayout(1, false));
 		
 		descStepHeading = new StyledText(descStep, SWT.READ_ONLY | SWT.WRAP);
@@ -243,7 +255,13 @@ public class Aup2View extends ViewPart {
 		descStep3.setDoubleClickEnabled(false);
 		descStep3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
-		descPlugin = new Composite(grpDescSashForm, SWT.NONE);
+		descPluginSC = new ScrolledComposite(grpDescSashForm, SWT.V_SCROLL);
+		descPluginSC.setMinWidth(100);
+		descPluginSC.setMinHeight(100);
+		descPluginSC.setExpandHorizontal(true);
+		descPluginSC.setExpandVertical(true);
+		
+		descPlugin = new Composite(descPluginSC, SWT.NONE);
 		descPlugin.setLayout(new GridLayout(1, false));
 		
 		descPluginHeading = new StyledText(descPlugin, SWT.READ_ONLY | SWT.WRAP);
@@ -256,6 +274,10 @@ public class Aup2View extends ViewPart {
 		descPluginText.setDoubleClickEnabled(false);
 		descPluginText.setText(String.format(Messages.Aup2View_DescBoxR_Text, ""));
 		descPluginText.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, true, 1, 1));
+		
+		descStepSC.setContent(descStep);
+		descPluginSC.setContent(descPlugin);
+		
 		grpDescSashForm.setWeights(new int[] {40, 60});
 		contentSashForm.setWeights(new int[] {70, 30});
 		
@@ -277,7 +299,9 @@ public class Aup2View extends ViewPart {
 	 * Hook resize events to enforce minimum dimensions 
 	 */
 	private void hookResize() {
-		
+		scroll = new ScrollingHandler();
+		descStepSC.addListener(SWT.Resize, scroll);
+		descPluginSC.addListener(SWT.Resize, scroll);
 	}
 	
 	public void reset() {
@@ -287,18 +311,17 @@ public class Aup2View extends ViewPart {
 	public void dispose() {
 	}
 	
-	public class ResizeHandler extends ControlAdapter{
+	/**
+	 * Enables scrolling of ScrolledComposites.<p>
+	 * Has to be registered only on the SWT.Resize event for ScrolledComposites with exactly one child.
+	 */
+	public class ScrollingHandler implements Listener{
 
-		final int LIMIT;
-		
-		ResizeHandler(int limit) {
-			LIMIT = limit;
-		}
-		
-		@Override
-		public void controlResized(ControlEvent e) {
-			// TODO Auto-generated method stub
-			
+		public void handleEvent(Event e) {
+			ScrolledComposite control = (ScrolledComposite) e.widget;
+			Control child = control.getChildren()[0];
+			Rectangle r = control.getClientArea();
+			control.setMinSize(child.computeSize(r.width, SWT.DEFAULT)); // compute required height for fixed width and enable scrolling afterwards
 		}
 		
 	}
